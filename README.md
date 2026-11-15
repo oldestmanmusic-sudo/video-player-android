@@ -1,31 +1,22 @@
 # Video Player Android
 
-Aplicación Android para reproducir videos desde enlaces directos, MP4, MKV, HLS y streams M3U8.
+Aplicación Android en Kotlin para reproducir videos y streams autorizados mediante URL, con listas M3U/M3U8, favoritos y una biblioteca de audio para Android Auto.
 
 ## Funcionalidades
-- Reproducción de video desde URL
-- Soporte para streams HLS / M3U8
-- Controles básicos: reproducir, pausar y detener
-- Interfaz simple y lista para ampliar
-
-## Tecnologías
-- Kotlin
-- AndroidX
-- ExoPlayer (Media3)
+- Reproducción en el teléfono con Media3/ExoPlayer.
+- Importación de listas M3U y reproducción de streams HLS/M3U8.
+- Lista de reproducción y favoritos guardados localmente.
+- Servicio `MediaLibraryService` con categorías de playlist y favoritos para explorar y controlar audio desde Android Auto.
+- En Android Auto se ofrece una experiencia de **audio solamente**; la pantalla del coche no reproduce video.
 
 ## Requisitos
-- Android Studio Iguana o superior
-- JDK 17
-- SDK de Android 34
+- Android Studio y JDK 17.
+- Android SDK 34.
 
 ## Ejecutar
-1. Abre el proyecto en Android Studio.
-2. Sincroniza Gradle.
-3. Ejecuta la app en un emulador o dispositivo Android.
+Abre el proyecto en Android Studio, sincroniza Gradle y ejecútalo en un dispositivo o emulador. Para ver la integración de coche se necesita Android Auto compatible y la app instalada en el teléfono; la visibilidad también depende de las reglas de calidad y distribución de Google Play.
 
-## Uso
-Ingresa una URL de video o streaming como:
-- https://example.com/video.mp4
-- https://example.com/playlist.m3u8
+## Android Auto
+La biblioteca del coche expone la playlist guardada y los favoritos. Primero carga una lista M3U o guarda favoritos desde la app del teléfono; luego abre Video Player Android desde la sección de medios de Android Auto. Los controles de reproducción se suministran mediante Media3.
 
-La app usa ExoPlayer para manejar la reproducción.
+La integración no habilita video en la pantalla del coche: Android Auto está pensado para controles de reproducción de audio y navegación segura. Usa contenido del que tengas autorización para reproducir y distribuir.

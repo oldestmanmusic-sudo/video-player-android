@@ -27,13 +27,13 @@ class MainActivity : AppCompatActivity() {
 
         prefs = getSharedPreferences("video_player_prefs", MODE_PRIVATE)
         favorites.addAll(readFavorites())
+        playlist.addAll(readPlaylist())
 
         initializePlayer()
         initializeRecyclerView()
+        adapter.updateData(playlist)
 
-        binding.playButton.setOnClickListener {
-            playCurrentUrl()
-        }
+        binding.playButton.setOnClickListener { playCurrentUrl() }
 
         binding.loadPlaylistButton.setOnClickListener {
             val input = binding.urlInput.text?.toString()?.trim().orEmpty()
@@ -50,17 +50,7 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Primero selecciona o reproduce un video", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-
-            if (favorites.contains(url)) {
-                favorites.remove(url)
-                Toast.makeText(this, "Eliminado de favoritos", Toast.LENGTH_SHORT).show()
-            } else {
-                favorites.add(url)
-                Toast.makeText(this, "Añadido a favoritos", Toast.LENGTH_SHORT).show()
-            }
-            saveFavorites(favorites)
-            adapter.updateData(getCurrentDisplayList())
-            updateFavoriteButtonState()
+            toggleFavorite(VideoItem(url.substringAfterLast('/').substringBefore('?').ifBlank { "Video" }, url))
         }
 
         binding.showPlaylistButton.setOnClickListener {
@@ -69,13 +59,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.showFavoritesButton.setOnClickListener {
-            adapter.updateData(favorites.map { VideoItem(title = it.substringAfterLast('/'), url = it, isLive = it.contains("m3u8", ignoreCase = true)) })
+            adapter.updateData(favorites.map { url ->
+                playlist.firstOrNull { it.url == url }
+                    ?: VideoItem(url.substringAfterLast('/').substringBefore('?').ifBlank { "Video" }, url, url.contains("m3u8", true))
+            })
             binding.sectionTitle.text = "Favoritos"
         }
 
         val defaultUrl = "https://storage.googleapis.com/exoplayer-test-media-0/BigBuckBunny_320x180.mp4"
         binding.urlInput.setText(defaultUrl)
-        playVideo(VideoItem("Big Buck Bunny", defaultUrl, false))
+        if (playlist.isEmpty()) playlist.add(VideoItem("Big Buck Bunny", defaultUrl))
+        adapter.updateData(playlist)
     }
 
     private fun initializePlayer() {
@@ -101,30 +95,23 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Ingresa una URL válida", Toast.LENGTH_SHORT).show()
             return
         }
-        playVideo(VideoItem(title = url.substringAfterLast('/').substringBefore('?').ifBlank { "Video" }, url = url))
+        playVideo(VideoItem(url.substringAfterLast('/').substringBefore('?').ifBlank { "Video" }, url))
     }
 
     private fun playVideo(video: VideoItem) {
         if (video.url.isBlank()) return
-
         currentUrl = video.url
         updateFavoriteButtonState()
         binding.urlInput.setText(video.url)
 
-        val mediaItem = MediaItem.fromUri(video.url)
-        player?.setMediaItem(mediaItem)
+        player?.setMediaItem(MediaItem.fromUri(video.url))
         player?.prepare()
         player?.playWhenReady = true
-
         Toast.makeText(this, "Reproduciendo: ${video.title}", Toast.LENGTH_SHORT).show()
     }
 
     private fun toggleFavorite(video: VideoItem) {
-        if (favorites.contains(video.url)) {
-            favorites.remove(video.url)
-        } else {
-            favorites.add(video.url)
-        }
+        if (favorites.contains(video.url)) favorites.remove(video.url) else favorites.add(video.url)
         saveFavorites(favorites)
         adapter.updateData(getCurrentDisplayList())
         updateFavoriteButtonState()
@@ -136,7 +123,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadPlaylist(input: String) {
         val url = input.trim()
-
         try {
             if (url.contains(".m3u", ignoreCase = true) || url.contains("playlist", ignoreCase = true)) {
                 val parsed = PlaylistParser.fetchPlaylist(url)
@@ -146,19 +132,17 @@ class MainActivity : AppCompatActivity() {
                 }
                 playlist.clear()
                 playlist.addAll(parsed)
+                savePlaylist(playlist)
                 adapter.updateData(parsed)
                 binding.sectionTitle.text = "Lista de reproducción"
                 Toast.makeText(this, "Playlist cargada: ${parsed.size} elementos", Toast.LENGTH_SHORT).show()
                 return
             }
 
-            val singleVideo = VideoItem(
-                title = url.substringAfterLast('/').substringBefore('?').ifBlank { "Video" },
-                url = url,
-                isLive = false
-            )
+            val singleVideo = VideoItem(url.substringAfterLast('/').substringBefore('?').ifBlank { "Video" }, url)
             playlist.clear()
             playlist.add(singleVideo)
+            savePlaylist(playlist)
             adapter.updateData(playlist)
             binding.sectionTitle.text = "Lista de reproducción"
             playVideo(singleVideo)
@@ -170,10 +154,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun getCurrentDisplayList(): List<VideoItem> {
         return if (binding.sectionTitle.text == "Favoritos") {
-            favorites.map { VideoItem(title = it.substringAfterLast('/'), url = it, isLive = it.contains("m3u8", ignoreCase = true)) }
-        } else {
-            playlist
-        }
+            favorites.map { url -> playlist.firstOrNull { it.url == url } ?: VideoItem(url, url) }
+        } else playlist
     }
 
     override fun onStop() {
