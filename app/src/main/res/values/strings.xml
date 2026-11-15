@@ -1,6 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Video Player Android</string>
-    <string name="play">Reproducir</string>
-    <string name="pause">Pausar</string>
-    <string name="stop">Detener</string>
 </resources>
