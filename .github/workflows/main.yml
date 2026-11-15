@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -36,3 +38,14 @@ jobs:
         with:
           name: video-player-debug-apk
           path: video-player-android/app/build/outputs/apk/debug/*.apk
+
+      - name: Publicar versión (la usa el botón Actualizar de la app)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp video-player-android/app/build/outputs/apk/debug/app-debug.apk video-player.apk
+          gh release create "build-${{ github.run_number }}" video-player.apk \
+            --repo "${{ github.repository }}" \
+            --title "Versión ${{ github.run_number }}" \
+            --notes "APK de depuración compilada automáticamente" \
+            --latest
