@@ -18,12 +18,6 @@ jobs:
       - name: Descomprimir el proyecto
         run: unzip -q video-player-android.zip
 
-      - name: Descargar el SDK de proyección de Android Auto (aauto.aar, de Fermata)
-        run: |
-          mkdir -p video-player-android/app/libs
-          curl -fsSL -o video-player-android/app/libs/aauto.aar \
-            https://github.com/AndreyPavlenko/Fermata/raw/master/fermata/lib/auto/aauto.aar
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
